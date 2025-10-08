@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calculator with Classic Layout</title>
+<style>
+  body {
+    background: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+  }
+
+  .calculator {
+    background: #161010;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+  }
+
+  #display {
+    width: 100%;
+    height: 50px;
+    font-size: 2rem;
+    text-align: right;
+    padding: 5px 10px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 5px;
+    background: #d9e1e4;
+    color: rgb(45, 97, 156);
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(5, 60px);
+    gap: 10px;
+  }
+
+  button {
+    font-size: 1.4rem;
+    border: none;
+    border-radius: 5px;
+    background: #382a2a;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  button:hover {
+    background: #991212;
+  }
+
+  button.operator {
+    background: #f57c00;
+  }
+
+  button.operator:hover {
+    background: #bd7914;
+  }
+
+  button.equal {
+    background: #009688;
+  }
+
+  button.equal:hover {
+    background: #26a69a;
+  }
+
+  button.clear {
+    background: #911b19;
+  }
+
+  button.clear:hover {
+    background: #2c167a;
+  }
+
+  /* Layout adjustment */
+
+  /* Numbers */
+  button[data-num="7"] { grid-column: 1; grid-row: 2; }
+  button[data-num="8"] { grid-column: 2; grid-row: 2; }
+  button[data-num="9"] { grid-column: 3; grid-row: 2; }
+
+  button[data-num="4"] { grid-column: 1; grid-row: 3; }
+  button[data-num="5"] { grid-column: 2; grid-row: 3; }
+  button[data-num="6"] { grid-column: 3; grid-row: 3; }
+
+  button[data-num="1"] { grid-column: 1; grid-row: 4; }
+  button[data-num="2"] { grid-column: 2; grid-row: 4; }
+  button[data-num="3"] { grid-column: 3; grid-row: 4; }
+
+  button[data-num="0"] {
+    grid-column: 1 / span 2;
+    grid-row: 5;
+  }
+
+  /* Operators */
+  button.clear { grid-column: 1; grid-row: 1; }
+  button.operator[data-op="/"] { grid-column: 4; grid-row: 2; }
+  button.operator[data-op="*"] { grid-column: 4; grid-row: 3; }
+  button.operator[data-op="-"] { grid-column: 4; grid-row: 4; }
+  button.operator[data-op="+"] { grid-column: 4; grid-row: 5; }
+
+  button.equal {
+    grid-column: 3;
+    grid-row: 5;
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <input type="text" id="display" value="0" disabled />
+
+  <div class="buttons">
+    <button class="clear">C</button>
+
+    <button data-num="7">7</button>
+    <button data-num="8">8</button>
+    <button data-num="9">9</button>
+    <button class="operator" data-op="/">÷</button>
+
+    <button data-num="4">4</button>
+    <button data-num="5">5</button>
+    <button data-num="6">6</button>
+    <button class="operator" data-op="*">×</button>
+
+    <button data-num="1">1</button>
+    <button data-num="2">2</button>
+    <button data-num="3">3</button>
+    <button class="operator" data-op="-">-</button>
+
+    <button data-num="0">0</button>
+    <button class="equal">=</button>
+    <button class="operator" data-op="+">+</button>
+  </div>
+</div>
+
+<script>
+  const display = document.getElementById('display');
+  let currentInput = '0';
+  let operator = null;
+  let firstOperand = null;
+  let waitingForSecondOperand = false;
+
+  function updateDisplay() {
+    display.value = currentInput;
+  }
+
+  function inputDigit(digit) {
+    if (waitingForSecondOperand) {
+      currentInput = digit;
+      waitingForSecondOperand = false;
+    } else {
+      currentInput = currentInput === '0' ? digit : currentInput + digit;
+    }
+  }
+
+  function inputOperator(nextOperator) {
+    const inputValue = parseFloat(currentInput);
+
+    if (operator && waitingForSecondOperand) {
+      operator = nextOperator;
+      return;
+    }
+
+    if (firstOperand === null) {
+      firstOperand = inputValue;
+    } else if (operator) {
+      const result = calculate(firstOperand, inputValue, operator);
+      if (result === null) {
+        currentInput = 'Error';
+        firstOperand = null;
+        operator = null;
+        waitingForSecondOperand = false;
+        updateDisplay();
+        return;
+      }
+      currentInput = String(result);
+      firstOperand = result;
+    }
+
+    operator = nextOperator;
+    waitingForSecondOperand = true;
+  }
+
+  function calculate(first, second, operator) {
+    switch (operator) {
+      case '+': return first + second;
+      case '-': return first - second;
+      case '*': return first * second;
+      case '/': return second === 0 ? null : first / second;
+      default: return second;
+    }
+  }
+
+  function resetCalculator() {
+    currentInput = '0';
+    firstOperand = null;
+    operator = null;
+    waitingForSecondOperand = false;
+  }
+
+  document.querySelector('.buttons').addEventListener('click', (event) => {
+    const target = event.target;
+
+    if (!target.matches('button')) return;
+
+    if (target.classList.contains('clear')) {
+      resetCalculator();
+      updateDisplay();
+      return;
+    }
+
+    if (target.classList.contains('operator')) {
+      inputOperator(target.getAttribute('data-op'));
+      updateDisplay();
+      return;
+    }
+
+    if (target.classList.contains('equal')) {
+      if (operator && !waitingForSecondOperand) {
+        inputOperator(operator);
+        operator = null;
+        firstOperand = null;
+        waitingForSecondOperand = false;
+        updateDisplay();
+      }
+      return;
+    }
+
+    if (target.hasAttribute('data-num')) {
+      inputDigit(target.getAttribute('data-num'));
+      updateDisplay();
+      return;
+    }
+  });
+
+  updateDisplay();
+</script>
+
+</body>
+</html>
+
